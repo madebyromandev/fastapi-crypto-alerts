@@ -40,3 +40,11 @@ def test_connection():
 
 if __name__ == "__main__":
     print("Подключено к базе:", test_connection())
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
