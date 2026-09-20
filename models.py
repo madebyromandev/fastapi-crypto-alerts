@@ -1,4 +1,5 @@
-from sqlalchemy import Float, Integer, String
+from sqlalchemy import DateTime, Float, Integer, String, func
+from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -28,3 +29,9 @@ class Alert(Base):
         String(10),
         nullable=False
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True),
+    server_default=func.now(),
+    nullable=False
+)
