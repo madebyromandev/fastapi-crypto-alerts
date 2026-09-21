@@ -22,3 +22,12 @@ class AlertResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class AlertCheckResponse(BaseModel):
+    id: int
+    symbol: str
+    target_price: float
+    current_price: float
+    direction: str
+    triggered: bool
+    created_at: datetime

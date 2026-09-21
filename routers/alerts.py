@@ -5,8 +5,12 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Alert
-from schemas import AlertCreate, AlertResponse, AlertUpdate
-
+from schemas import (
+    AlertCheckResponse,
+    AlertCreate,
+    AlertResponse,
+    AlertUpdate,
+)
 
 router = APIRouter(
     prefix="/alerts",
@@ -26,7 +30,10 @@ def get_alerts(db: Session = Depends(get_db)):
 
     return alerts
 
-@router.get("/check")
+@router.get(
+    "/check",
+    response_model=list[AlertCheckResponse]
+)
 def check_alerts(db: Session = Depends(get_db)):
     alerts = db.scalars(
         select(Alert)
