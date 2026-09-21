@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from services.bybit import get_ticker
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,46 @@ def get_alerts(db: Session = Depends(get_db)):
     ).all()
 
     return alerts
+
+@router.get("/check")
+def check_alerts(db: Session = Depends(get_db)):
+    alerts = db.scalars(
+        select(Alert)
+    ).all()
+
+    results = []
+    prices = {}
+
+    for alert in alerts:
+        symbol = alert.symbol.upper()
+
+        # Если несколько алертов на одну монету,
+        # цену Bybit запрашиваем только один раз
+        if symbol not in prices:
+            ticker = get_ticker(
+                symbol=symbol,
+                category="spot"
+            )
+            prices[symbol] = ticker["price"]
+
+        current_price = prices[symbol]
+
+        if alert.direction == "above":
+            triggered = current_price >= alert.target_price
+        else:
+            triggered = current_price <= alert.target_price
+
+        results.append({
+            "id": alert.id,
+            "symbol": alert.symbol,
+            "target_price": alert.target_price,
+            "current_price": current_price,
+            "direction": alert.direction,
+            "triggered": triggered,
+            "created_at": alert.created_at
+        })
+
+    return results
 
 
 # Создать алерт
