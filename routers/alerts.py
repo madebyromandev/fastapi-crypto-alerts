@@ -11,8 +11,9 @@ from schemas import (
     AlertCreate,
     AlertResponse,
     AlertUpdate,
+    PendingNotificationResponse,
     TriggeredAlertResponse,
-    PendingNotificationResponse
+    NotificationMarkedResponse,
 )
 
 router = APIRouter(
@@ -142,6 +143,36 @@ def get_pending_notifications(
     ).all()
 
     return alerts
+
+@router.patch(
+    "/{alert_id}/notified",
+    response_model=NotificationMarkedResponse
+)
+def mark_alert_notified(
+    alert_id: int,
+    db: Session = Depends(get_db)
+):
+    alert = db.get(Alert, alert_id)
+
+    if alert is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Алерт не найден"
+        )
+
+    if not alert.is_triggered:
+        raise HTTPException(
+            status_code=400,
+            detail="Алерт ещё не сработал"
+        )
+
+    # Повторно время не перезаписываем
+    if alert.notified_at is None:
+        alert.notified_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(alert)
+
+    return alert
 
 
 # Получить один алерт

@@ -52,3 +52,8 @@ class PendingNotificationResponse(BaseModel):
     triggered_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class NotificationMarkedResponse(BaseModel):
+    id: int
+    symbol: str
+    notified_at: datetime
