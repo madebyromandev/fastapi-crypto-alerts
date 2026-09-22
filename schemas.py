@@ -31,3 +31,4 @@ class AlertCheckResponse(BaseModel):
     direction: str
     triggered: bool
     created_at: datetime
+    triggered_at: datetime | None

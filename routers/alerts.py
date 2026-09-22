@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
 from services.bybit import get_ticker
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -41,12 +42,12 @@ def check_alerts(db: Session = Depends(get_db)):
 
     results = []
     prices = {}
+    database_changed = False
 
     for alert in alerts:
         symbol = alert.symbol.upper()
 
-        # Если несколько алертов на одну монету,
-        # цену Bybit запрашиваем только один раз
+        # Для одинаковых монет цену Bybit получаем только один раз
         if symbol not in prices:
             ticker = get_ticker(
                 symbol=symbol,
@@ -56,10 +57,17 @@ def check_alerts(db: Session = Depends(get_db)):
 
         current_price = prices[symbol]
 
+        # Проверяем текущее условие
         if alert.direction == "above":
-            triggered = current_price >= alert.target_price
+            condition_met = current_price >= alert.target_price
         else:
-            triggered = current_price <= alert.target_price
+            condition_met = current_price <= alert.target_price
+
+        # Записываем срабатывание только ОДИН раз
+        if condition_met and not alert.is_triggered:
+            alert.is_triggered = True
+            alert.triggered_at = datetime.now(timezone.utc)
+            database_changed = True
 
         results.append({
             "id": alert.id,
@@ -67,9 +75,13 @@ def check_alerts(db: Session = Depends(get_db)):
             "target_price": alert.target_price,
             "current_price": current_price,
             "direction": alert.direction,
-            "triggered": triggered,
-            "created_at": alert.created_at
+            "triggered": alert.is_triggered,
+            "created_at": alert.created_at,
+            "triggered_at": alert.triggered_at
         })
+
+    if database_changed:
+        db.commit()
 
     return results
 
