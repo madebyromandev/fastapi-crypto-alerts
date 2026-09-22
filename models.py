@@ -1,5 +1,6 @@
-from sqlalchemy import DateTime, Float, Integer, String, func
 from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -31,7 +32,18 @@ class Alert(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-    DateTime(timezone=True),
-    server_default=func.now(),
-    nullable=False
-)
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    is_triggered: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+        nullable=False
+    )
+
+    triggered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
