@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from services.bybit import get_ticker
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from services.telegram import send_telegram_message
 
 from database import get_db
 from models import Alert
@@ -45,12 +46,11 @@ def check_alerts(db: Session = Depends(get_db)):
 
     results = []
     prices = {}
-    database_changed = False
 
     for alert in alerts:
         symbol = alert.symbol.upper()
 
-        # Для одинаковых монет цену Bybit получаем только один раз
+        # Получаем цену одной монеты только один раз
         if symbol not in prices:
             ticker = get_ticker(
                 symbol=symbol,
@@ -60,17 +60,47 @@ def check_alerts(db: Session = Depends(get_db)):
 
         current_price = prices[symbol]
 
-        # Проверяем текущее условие
+        # Проверяем условие алерта
         if alert.direction == "above":
             condition_met = current_price >= alert.target_price
         else:
             condition_met = current_price <= alert.target_price
 
-        # Записываем срабатывание только ОДИН раз
+        # Фиксируем первое срабатывание
         if condition_met and not alert.is_triggered:
             alert.is_triggered = True
             alert.triggered_at = datetime.now(timezone.utc)
-            database_changed = True
+            db.commit()
+            db.refresh(alert)
+
+        # Если алерт уже сработал, но Telegram ещё не отправлен
+        if alert.is_triggered and alert.notified_at is None:
+            direction_text = (
+                "выше"
+                if alert.direction == "above"
+                else "ниже"
+            )
+
+            message = (
+                "🚨 Сработал ценовой алерт!\n\n"
+                f"Монета: {alert.symbol}\n"
+                f"Условие: {direction_text} {alert.target_price} USDT\n"
+                f"Текущая цена: {current_price} USDT"
+            )
+
+            try:
+                sent = send_telegram_message(message)
+
+                if sent:
+                    alert.notified_at = datetime.now(timezone.utc)
+                    db.commit()
+                    db.refresh(alert)
+
+            except Exception as error:
+                print(
+                    f"Ошибка Telegram для алерта "
+                    f"{alert.id}: {error}"
+                )
 
         results.append({
             "id": alert.id,
@@ -82,9 +112,6 @@ def check_alerts(db: Session = Depends(get_db)):
             "created_at": alert.created_at,
             "triggered_at": alert.triggered_at
         })
-
-    if database_changed:
-        db.commit()
 
     return results
 
