@@ -11,6 +11,7 @@ from schemas import (
     AlertCreate,
     AlertResponse,
     AlertUpdate,
+    TriggeredAlertResponse,
 )
 
 router = APIRouter(
@@ -107,6 +108,21 @@ def create_alert(
     db.refresh(new_alert)
 
     return new_alert
+
+@router.get(
+    "/triggered",
+    response_model=list[TriggeredAlertResponse]
+)
+def get_triggered_alerts(
+    db: Session = Depends(get_db)
+):
+    alerts = db.scalars(
+        select(Alert)
+        .where(Alert.is_triggered.is_(True))
+        .order_by(Alert.triggered_at.desc())
+    ).all()
+
+    return alerts
 
 
 # Получить один алерт

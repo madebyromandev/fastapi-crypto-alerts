@@ -32,3 +32,14 @@ class AlertCheckResponse(BaseModel):
     triggered: bool
     created_at: datetime
     triggered_at: datetime | None
+
+class TriggeredAlertResponse(BaseModel):
+    id: int
+    symbol: str
+    target_price: float
+    direction: str
+    created_at: datetime
+    is_triggered: bool
+    triggered_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
