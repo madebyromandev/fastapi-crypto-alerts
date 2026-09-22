@@ -12,6 +12,7 @@ from schemas import (
     AlertResponse,
     AlertUpdate,
     TriggeredAlertResponse,
+    PendingNotificationResponse
 )
 
 router = APIRouter(
@@ -120,6 +121,24 @@ def get_triggered_alerts(
         select(Alert)
         .where(Alert.is_triggered.is_(True))
         .order_by(Alert.triggered_at.desc())
+    ).all()
+
+    return alerts
+
+@router.get(
+    "/pending-notifications",
+    response_model=list[PendingNotificationResponse]
+)
+def get_pending_notifications(
+    db: Session = Depends(get_db)
+):
+    alerts = db.scalars(
+        select(Alert)
+        .where(
+            Alert.is_triggered.is_(True),
+            Alert.notified_at.is_(None)
+        )
+        .order_by(Alert.triggered_at)
     ).all()
 
     return alerts

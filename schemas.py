@@ -43,3 +43,12 @@ class TriggeredAlertResponse(BaseModel):
     triggered_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class PendingNotificationResponse(BaseModel):
+    id: int
+    symbol: str
+    target_price: float
+    direction: str
+    triggered_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
