@@ -10,6 +10,20 @@ Swagger API:
 
 https://fastapi-crypto-alerts-production.up.railway.app/docs
 
+## 📸 Screenshots
+
+### Swagger API
+
+![Swagger API](screenshots/swagger.png)
+
+### Telegram — список алертов
+
+![Telegram Alerts](screenshots/telegram-alerts.png)
+
+### Telegram — сработавший алерт
+
+![Telegram Notification](screenshots/telegram-notification.png)
+
 ## 🚀 Возможности
 
 - Получение актуальной цены криптовалют через Bybit API
