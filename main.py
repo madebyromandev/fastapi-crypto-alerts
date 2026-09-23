@@ -2,24 +2,29 @@ from fastapi import FastAPI
 import asyncio
 from contextlib import asynccontextmanager
 
+from services.telegram_commands import telegram_command_worker
 from services.alert_worker import alert_worker
 
 from routers import alerts, coins
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    worker_task = asyncio.create_task(alert_worker())
+    alert_task = asyncio.create_task(alert_worker())
+    telegram_task = asyncio.create_task(
+        telegram_command_worker()
+    )
 
     try:
         yield
     finally:
-        worker_task.cancel()
+        alert_task.cancel()
+        telegram_task.cancel()
 
-        try:
-            await worker_task
-        except asyncio.CancelledError:
-            pass
-
+        for task in (alert_task, telegram_task):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 app = FastAPI(
     title="Crypto Alerts API",
